@@ -1,26 +1,12 @@
 function getTimeSegmentElements(segmentElement) {
   const segmentDisplay = segmentElement.querySelector(".segment-display");
-  const segmentDisplayTop = segmentDisplay.querySelector(
-    ".segment-display__top"
-  );
-  const segmentDisplayBottom = segmentDisplay.querySelector(
-    ".segment-display__bottom"
-  );
-
-  const segmentOverlay = segmentDisplay.querySelector(".segment-overlay");
-  const segmentOverlayTop = segmentOverlay.querySelector(
-    ".segment-overlay__top"
-  );
-  const segmentOverlayBottom = segmentOverlay.querySelector(
-    ".segment-overlay__bottom"
-  );
 
   return {
-    segmentDisplayTop,
-    segmentDisplayBottom,
-    segmentOverlay,
-    segmentOverlayTop,
-    segmentOverlayBottom,
+    segmentDisplayTop: segmentDisplay.querySelector(".segment-display__top"),
+    segmentDisplayBottom: segmentDisplay.querySelector(".segment-display__bottom"),
+    segmentOverlay: segmentDisplay.querySelector(".segment-overlay"),
+    segmentOverlayTop: segmentDisplay.querySelector(".segment-overlay__top"),
+    segmentOverlayBottom: segmentDisplay.querySelector(".segment-overlay__bottom"),
   };
 }
 
@@ -30,90 +16,73 @@ function updateSegmentValues(displayElement, overlayElement, value) {
 }
 
 function updateTimeSegment(segmentElement, timeValue) {
-  const segmentElements = getTimeSegmentElements(segmentElement);
+  const {
+    segmentDisplayTop,
+    segmentDisplayBottom,
+    segmentOverlay,
+    segmentOverlayTop,
+    segmentOverlayBottom,
+  } = getTimeSegmentElements(segmentElement);
 
-  if (
-    parseInt(segmentElements.segmentDisplayTop.textContent, 10) === timeValue
-  ) {
-    return;
-  }
+  if (parseInt(segmentDisplayTop.textContent, 10) === timeValue) return;
 
-  segmentElements.segmentOverlay.classList.add("flip");
+  // Trigger animation
+  segmentOverlay.classList.add("flip");
 
-  updateSegmentValues(
-    segmentElements.segmentDisplayTop,
-    segmentElements.segmentOverlayBottom,
-    timeValue
-  );
+  updateSegmentValues(segmentDisplayTop, segmentOverlayBottom, timeValue);
 
   function finishAnimation() {
-    segmentElements.segmentOverlay.classList.remove("flip");
-    updateSegmentValues(
-      segmentElements.segmentDisplayBottom,
-      segmentElements.segmentOverlayTop,
-      timeValue
-    );
-
+    segmentOverlay.classList.remove("flip");
+    updateSegmentValues(segmentDisplayBottom, segmentOverlayTop, timeValue);
     this.removeEventListener("animationend", finishAnimation);
   }
 
-  segmentElements.segmentOverlay.addEventListener(
-    "animationend",
-    finishAnimation
-  );
+  segmentOverlay.addEventListener("animationend", finishAnimation);
 }
 
 function updateTimeSection(sectionID, timeValue) {
-  const firstNumber = Math.floor(timeValue / 10) || 0;
-  const secondNumber = timeValue % 10 || 0;
+  const firstDigit = Math.floor(timeValue / 10) || 0;
+  const secondDigit = timeValue % 10 || 0;
+
   const sectionElement = document.getElementById(sectionID);
   const timeSegments = sectionElement.querySelectorAll(".time-segment");
 
-  updateTimeSegment(timeSegments[0], firstNumber);
-  updateTimeSegment(timeSegments[1], secondNumber);
+  updateTimeSegment(timeSegments[0], firstDigit);
+  updateTimeSegment(timeSegments[1], secondDigit);
 }
 
 function getTimeBits() {
-  const nowTime = new Date();
-  const hours = nowTime.getHours();
-  const minutes = nowTime.getMinutes();
-  const seconds = nowTime.getSeconds();
-
+  const now = new Date();
   return {
-    seconds,
-    minutes,
-    hours,
+    hours: now.getHours(),
+    minutes: now.getMinutes(),
+    seconds: now.getSeconds(),
   };
 }
 
 function updateAllSegments() {
-  const timeBits = getTimeBits();
-
-  updateTimeSection("seconds", timeBits.seconds);
-  updateTimeSection("minutes", timeBits.minutes);
-  updateTimeSection("hours", timeBits.hours);
+  const { hours, minutes, seconds } = getTimeBits();
+  updateTimeSection("hours", hours);
+  updateTimeSection("minutes", minutes);
+  updateTimeSection("seconds", seconds);
 }
 
-const countdownTimer = setInterval(() => {
-  updateAllSegments();
-}, 1000);
+// Update every second
+const countdownTimer = setInterval(updateAllSegments, 1000);
 
+// Fullscreen toggle
 function toggleFullScreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen();
-  } else if (document.exitFullscreen) {
-    document.exitFullscreen();
+  } else {
+    document.exitFullscreen?.();
   }
 }
 
-document.addEventListener(
-  "keydown",
-  (e) => {
-    if (e.key === "Enter") {
-      toggleFullScreen();
-    }
-  },
-  false
-);
+// Keyboard shortcut
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") toggleFullScreen();
+});
 
+// Initial update
 updateAllSegments();
